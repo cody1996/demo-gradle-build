@@ -1,0 +1,21 @@
+rootProject.name = 'demo-gradle-build'
+
+include 'common'
+
+include 'public'
+
+include 'admin'
+
+include 'admin-public'
+project(":admin-public").projectDir = file("$rootDir/admin/public")
+
+include 'admin-client'
+project(":admin-client").projectDir = file("$rootDir/admin/client")
+
+include 'server'
+
+include 'server-public'
+project(":server-public").projectDir = file("$rootDir/server/public")
+
+include 'server-client'
+project(":server-client").projectDir = file("$rootDir/server/client")
