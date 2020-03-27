@@ -1,15 +1,38 @@
+buildscript {
+    ext {
+        internalLibraries = [
+                project(':public'),
+                project(':server-public')
+        ]
+    }
+}
+
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 dependencies {
-    api project(':server-public')
+    internalLibraries.each { api it }
 
     implementation 'org.springframework:spring-web'
 }
 
+jar {
+    from {
+        internalLibraries.collect { it.sourceSets.main.output }
+    }
+}
+
 task sourcesJar(type: Jar) {
     from sourceSets.main.allJava
+    from {
+        internalLibraries.collect { it.sourceSets.main.allJava }
+    }
     archiveClassifier = 'sources'
+}
+
+javadoc {
+    source internalLibraries.collect { it.sourceSets.main.allJava }
+    classpath += files(internalLibraries.collect { it.sourceSets.main.compileClasspath })
 }
 
 task javadocJar(type: Jar) {
@@ -25,17 +48,23 @@ publishing {
             artifact javadocJar
             pom {
                 name = 'Server Client Library'
+                withXml {
+                    Node pomNode = asNode()
+                    pomNode.dependencies.'*'.each {
+                        Node temp = it
+                        internalLibraries.each {
+                            if (temp.groupId.text() == it.getGroup() && temp.artifactId.text() == it.getName()) {
+                                temp.parent().remove(temp)
+                                return false
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-signing {
-    sign publishing.publications.mavenJava
-}
-
-javadoc {
-    if (JavaVersion.current().isJava9Compatible()) {
-        options.addBooleanOption('html5', true)
-    }
-}
+//signing {
+//    sign publishing.publications.mavenJava
+//}
